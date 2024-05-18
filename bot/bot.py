@@ -60,10 +60,11 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> Op
 
 
 async def picture_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    user_id = update.effective_user.id
     logger.info(
-        f'Picture to recognize by {update.effective_user.first_name} {update.effective_user.last_name} '
-        f'({update.effective_user.id})')
+        f'Picture to recognize by {update.effective_user.first_name} {update.effective_user.last_name} ({user_id})')
     await update.message.reply_text('Вы прислали фото!')
+    await (await context.bot.getFile(update.message.photo[-1].file_id)).download_to_drive(f'images/img_{user_id}.jpg')
 
     return ConversationHandler.END
 

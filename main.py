@@ -1,4 +1,6 @@
-from bot import bot
+# from bot import bot
+from cnn import train
 
 if __name__ == '__main__':
-    bot.start()
+    # bot.start()
+    train.start()
