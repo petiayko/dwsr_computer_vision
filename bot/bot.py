@@ -1,11 +1,20 @@
+import numpy as np
 from typing import Optional
+from PIL import Image
+from telegram import Update, ReplyKeyboardMarkup
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, ConversationHandler, filters
+from tensorflow.keras import models
 
 from bot.constants import *
 from bot.logs import log_init
-from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, ConversationHandler, filters
 
 logger = log_init()
+
+try:
+    model = models.load_model(MODEL_NAME)
+except Exception as e:
+    model = None
+    logger.error(f'Error occurred while loading model: {e}')
 
 
 async def start_command_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -63,8 +72,22 @@ async def picture_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     user_id = update.effective_user.id
     logger.info(
         f'Picture to recognize by {update.effective_user.first_name} {update.effective_user.last_name} ({user_id})')
-    await update.message.reply_text('Вы прислали фото!')
     await (await context.bot.getFile(update.message.photo[-1].file_id)).download_to_drive(f'images/img_{user_id}.jpg')
+
+    if model is None:
+        logger.error(f'There is no model. Impossible to recognize photo')
+        await update.message.reply_text('В настоящий момент невозможно распознать фото')
+        return ConversationHandler.END
+
+    try:
+        img = Image.open(f'images/img_{user_id}.jpg').convert('RGB').resize((150, 150))
+        img_array = np.array(img) / 255.0
+        img_array = np.expand_dims(img_array, axis=0)
+        prediction = model.predict(img_array)
+        await update.message.reply_text(str(np.argmax(prediction[0])))
+    except Exception as e:
+        logger.error(f'Error occurred while recognizing photo: {e}')
+        await update.message.reply_text('Во время обработки запроса произошла ошибка')
 
     return ConversationHandler.END
 
