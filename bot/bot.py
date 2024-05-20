@@ -45,7 +45,8 @@ async def recognize_command_handler(update: Update, context: ContextTypes.DEFAUL
     logger.info(
         f'Starting /recognize by {update.effective_user.first_name} {update.effective_user.last_name} '
         f'({update.effective_user.id})')
-    await update.message.reply_text('Пришлите изображение. Бот определит, на нем кошка или собака')
+    await update.message.reply_text('Пришлите изображение. Бот определит, на нем '
+                                    f'{CLASSES_NAME_RUS[0]} или {CLASSES_NAME_RUS[1]}')
 
     return SENDING_PHOTO
 
@@ -84,7 +85,7 @@ async def picture_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         img_array = np.array(img) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
         prediction = model.predict(img_array)
-        await update.message.reply_text(str(np.argmax(prediction[0])))
+        await update.message.reply_text(f'Скорее всего, на фото {CLASSES_NAME_RUS[int(np.round(prediction))]}')
     except Exception as e:
         logger.error(f'Error occurred while recognizing photo: {e}')
         await update.message.reply_text('Во время обработки запроса произошла ошибка')
